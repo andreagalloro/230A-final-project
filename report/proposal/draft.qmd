@@ -1,0 +1,31 @@
+---
+title: Project Proposal Draft
+author:
+    - Andrea (Drew) Galloro
+    - Benjamin Khothsombath
+format:
+  pdf:
+    documentclass: article
+    margin-left: 1in
+    margin-right: 1in
+    margin-top: 1in
+    margin-bottom: 1in
+    #toc: true
+    fontsize: 12pt
+    include-in-header: 
+        text : |
+            \usepackage{mathtools}
+            \usepackage{xcolor}
+            \usepackage{listings}
+            \usepackage{subcaption}
+            \lstset{breaklines=true,breakatwhitespace=true}
+            \newcommand{\iid}{\overset{\text{iid}}{\sim}}
+            \newcommand{\E}[1]{\mathbb{E}\left[ #1 \right]}
+            \newcommand{\Var}[1]{\text{Var}\left( #1 \right)}
+            \newcommand{\Prob}[1]{\mathbb{P}\left( #1 \right)}
+            \newcommand{\ind}[1]{\mathbb{1}\left\{ #1 \right\}}
+            \newcommand{\Cov}[1]{\text{Cov}\left( #1 \right)}
+            \newcommand{\sand}{\quad \text{and} \quad}
+---
+
+
