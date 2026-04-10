@@ -1,5 +1,6 @@
 ---
-title: Project Proposal Draft
+title: STAT 230A Project Proposal Draft
+subtitle: Predicting BART Ridership Using Hourly OD Data
 author:
     - Andrea (Drew) Galloro
     - Benjamin Khothsombath
@@ -28,4 +29,7 @@ format:
             \newcommand{\sand}{\quad \text{and} \quad}
 ---
 
+# Introduction
+
+# Data Source
 

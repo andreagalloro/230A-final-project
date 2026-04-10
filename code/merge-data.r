@@ -35,4 +35,4 @@ for (i in seq(2019, 2025)) {
 
 cat("Exporting to one csv\n")
 write_csv(od_data, "data/od-data.csv")
-cat("done")
+cat("done\n")

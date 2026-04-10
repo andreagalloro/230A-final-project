@@ -121,3 +121,54 @@ We'll have to see if similar trends exhibit on other OD pairs. This one is fairl
 * We may want to write data as station pairings instead of OD pairings. e.g. combining `PLZA` -> `EMBR` and `EMBR` -> `PLZA` ridership.
 * We could maybe add a time-of-day indicator
 * We could add a destination zone variable (e.g. by county? "Alameda", "San Francisco", "Contra Costa", etc.)
+
+# Second Pass
+
+Let's add some initial features to the dataset. Since the initial eda I have merged the data into one csv file.
+
+```{r}
+# remove old table from memory
+rm(od_data)
+
+# load in merged csv file.
+od_data <- read_csv("../data/od-data.csv")
+```
+
+## First Set of Features
+
+We'll start by adding an indicator for pre/post Covid. The first mandatory stay at home order was issued on March 19th, 2020. Therefore, we will add a feature that is 1 if the datetime is on March 20, 2020 or afterwards. As well as a feature for day of week. BART splits the data in their monthly reports by "Weekday," "Saturday," and "Sunday." We will do the same.
+
+```{r}
+od_data <- od_data |> mutate(post_covid = if_else(date > ymd("2020-03-19"), 1, 0),
+                                day = case_when(wday(date) %in% seq(2, 6) ~ "weekday",
+                                                wday(date) == 1 ~ "sunday",
+                                                wday(date) == 7 ~ "saturday")
+                        )
+```
+
+Now that we've added these features, let's see which days and destinations have the largest mean ridership:
+
+```{r}
+od_data |> group_by(day, destination) |> summarize(riders = mean(ridership)) |> arrange(desc(riders)) |> head(10)
+```
+
+Let's plot distributions of riderships based on destination station:
+
+```{r}
+od_data |> ggplot() + 
+                geom_histogram(aes(x = ridership), bins = 30) + 
+                facet_wrap(~ destination) + 
+                theme_minimal()
+```
+
+It appears that the ridership is heavily right skewed, with a few instances of really high ridership. We may want to do a log-transform on the data. Let's focus on a few specific destination stations.
+
+```{r}
+stations <- od_data |> distinct(destination)
+
+od_data |> filter(destination %in% sample(stations$destination, 6)) |>
+                ggplot() + 
+                        geom_histogram(aes(x = ridership), bins = 30) + 
+                        facet_wrap(~ destination) + 
+                        theme_minimal()
+```
