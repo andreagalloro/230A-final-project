@@ -1,0 +1,123 @@
+---
+title: Initial EDA of Hourly OD Data
+author: Drew Galloro
+format:
+ html:
+   theme: cosmo
+   toc: true
+   code-copy: true
+   code-block-background: true
+   code-overflow: wrap
+embed-resources: true
+---
+
+# First Pass
+
+## Load in 2018 Data
+
+```{r}
+library(tidyverse)
+```
+
+Let's start by loading in one of the datasets and poking around
+
+```{r}
+dir = "../data/date-hour-soo-dest-"
+od_2018 <- read_csv(paste(dir,"2018.csv", sep = ""), 
+        col_names = c(
+            "date", 
+            "hour", 
+            "origin",
+            "destination",
+            "ridership"
+        ))
+head(od_2018)
+```
+
+The data contains date, hour, origin and destination (OD) data. The first row tells us that three people got on at 12th street in oakland and got off at 12th street in the first hour of January 1st, 2018. (Maybe people realizing that they missed new years eve in SF). We're assuming that the hour variable represents the hour that a person exited their destination station, as an OD pair is not formed until a destination is chosen.
+
+```{r}
+dim(od_2018)
+```
+
+The data itself does not contain many features, but the number of observations is massive. There are $10,227,631$ "observations" in the dataset. Each hour of the day for each hour of the year, and the potential for $50*49 + 50 = 2500$ different OD pair combinations for each date-hour pair. 
+
+```{r}
+size <- format(object.size(od_2018), units = "Gb")
+cat("The estimated size of this tibble is:", size, "\n")
+```
+
+It should be noted that when reading in the data this was the table with the largest number of observations. I expect the other data to be similarly sized.
+
+## Ridership
+
+Let's look at the ridership column specifically:
+
+```{r}
+summary(od_2018$ridership)
+```
+
+It's worth noting that any datetime-OD pairings that did not have riders (i.e. would have ridership 0), are not in the dataset. We may want to add them back in if possible. Or, when we add lag variables, like the ridership of an OD pair from the previous hour, we will have to set it to zero if it is not present in the data.
+
+```{r}
+od_2018[which.max(od_2018$ridership),]
+```
+
+It's funny to note that the largest singular hour of ridership for an OD pair was a Raiders vs the Greenbay Packers Game. We may be able to use this to discern whether the hour variable records the hour at Origin or Destination.
+
+## Trends for Specific OD Pair
+
+Let's choose some specific OD pairs and plot their ridership over time:
+
+```{r}
+print(count(od_2018, origin), n = 50)
+```
+
+```{r}
+print(count(od_2018, destination), n = 50)
+```
+
+```{r}
+od_2018 |>
+    filter((origin == "PLZA") & (destination == "EMBR")) |>
+    mutate(datetime = date + dhours(hour)) |> 
+    ggplot(aes(x = datetime, y = ridership)) + 
+        geom_line()
+```
+
+Let's limit it to a certain hour:
+
+```{r}
+od_2018 |>
+    filter((origin == "PLZA") &
+            (destination == "EMBR") &
+            (hour == 9)) |> 
+    ggplot(aes(x = date, y = ridership)) + 
+        geom_line()
+```
+
+Let's limit it to a certain date
+
+```{r}
+od_2018 |>
+    filter((origin == "PLZA") &
+            (destination == "EMBR") &
+            (date == ymd("2018-05-10"))) |> 
+    ggplot(aes(x = hour, y = ridership)) + 
+        geom_line()
+```
+
+
+```{r}
+wday("2018-05-10", label = TRUE)
+```
+
+We'll have to see if similar trends exhibit on other OD pairs. This one is fairly straightforward. Variable ridership, likely lower on weekends and higher on commute days. On a specific weekday, ridership for this OD pair is highest in the morning and then it drops off. This is because we're not considering the return trip, which is a separate OD pair. We may want to bring these together as a station pair instead of an ordered pair.
+
+## Potential Changes to Data
+
+* We may need to add in missing datetime-OD pairs as having 0 ridership
+* We may be able to discern using the Raiders vs. Green Bay Packers game whether the hour is recorded at origin or destination
+* We may want to write data as station pairings instead of OD pairings. e.g. combining `PLZA` -> `EMBR` and `EMBR` -> `PLZA` ridership.
+* We could maybe add a time-of-day indicator
+* We could add a destination zone variable (e.g. by county? "Alameda", "San Francisco", "Contra Costa", etc.)
