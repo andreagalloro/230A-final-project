@@ -2,13 +2,13 @@
 
 Bart Ridership prediction based on hourly OD data from Bart's General Transit Feed Specification (GTSF) publically available data.
 
-From Bart's website: [Ridership Reports]{https://www.bart.gov/about/reports/ridership}
+From Bart's website: [Ridership Reports](https://www.bart.gov/about/reports/ridership)
 
 > Hourly Ridership Data
 >
 >For those of you looking to take a deeper dive into BART’s data - check out our hourly trip datasets. These files will allow you to analyze trips between all stations in the BART system by hour. The data is organized in the following columns: Date, Hour (24-hour clock), Origin Station, Destination Station, Number of Exits. All stations are abbreviated using the 4-Letter station codes, please refer to the station name abbreviations (.xls) for translation.
 
-From the legacy API documentation: [Bart Legacy API]{https://api.bart.gov/docs/overview/abbrev.aspx}
+From the legacy API documentation: [Bart Legacy API](https://api.bart.gov/docs/overview/abbrev.aspx)
 
 | Code | Station Name                 |
 | ---- | ---------------------------- |

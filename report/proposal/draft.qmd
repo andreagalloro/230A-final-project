@@ -29,7 +29,38 @@ format:
             \newcommand{\sand}{\quad \text{and} \quad}
 ---
 
+```{r read-in-data}
+#| include: false
+library(tidyverse)
+od_data <- read_csv("../../data/od-data.csv")
+set.seed(230)
+```
+
 # Introduction
 
-# Data Source
+Bay Area Rapid Transit (BART) services connects people from all parts of the San Francisco Bay Area. Thousands of people ride BART every day of the year. However, changes in demographics and a large, sudden shock to public transit ridership have placed BART on the backfoot. Even while they continue to expand service to the San Jose area and furthur inland into Contra Costa county. Building a model to predict ridership from existing data would be an aid to the agency, and could be used to help set schedules, justify new expansion or housing near stations, or justify reduced service in wake of an upcoming budget deficit. Our goal is to take publicly available BART hourly ridership data, organize by date and origin and destination (OD) pairs, and use it to construct a linear model that effectively captures trends in ridership over time.
+
+The dataset we chose to work with is large, but sparce in features. We have `r dim(od_data)[1]` observations in the dataset, but only `r dim(od_data)[2]` features. As a result, our plan is to use these features to engineer new ones that can extract patterns in the data, and use linear modelling principles to evaluate the significance of our engineered features in predicting ridership. How does ridership vary by different features, and to what degree has BART been able to bounce back after the COVID-19 pandemic?
+
+# The Data
+
+Our data is sourced from BART's ridership reports: [Ridership Reports](https://www.bart.gov/about/reports/ridership). Specifically, the hourly trip datasets, which run from 2018 to 2025 (The 2026 dataset has not been updated yet). An observation in our data looks like the following:
+
+```{r make-observation-table}
+#| echo: false
+knitr::kable(slice_sample(od_data, n = 1))
+```
+
+We have the date, hour (using 24-hour clock), the origin station, destination station (both represented as four letter codes), and the ridership. This specific observation is from May 24th, 2018, and tells us that 5 people rode from the San Bruno station to the 16th St Mission (SF) station during the 3:00 - 4:00 PM hour. Our assumption is that this means these people exited at the 16th St Mission station during this time period, as exiting the BART system would create the OD pair, but that is not explicitly stated anywhere in the official data description. To demostrate we can read in the data, let's plot the exit rates for a October 15th, 2025 on a map of the SF Bay Area: 
+
+__This is a fun idea, but i would need to implement some geospatial data as well and I don't know if I have time for that right now. Probably better to do distributions of ridership for some specific OD pairs.__ 
+
+```{r}
+# incomplete
+od_data |> 
+    filter(date == ymd("2025-10-15")) |>
+    group_by(destination) |>
+    summarize(exit_rate = n())
+```
+
 
