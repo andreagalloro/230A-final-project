@@ -1,6 +1,6 @@
 # STAT 230A Final Project
 
-Bart Ridership prediction based on hourly OD data from Bart's General Transit Feed Specification (GTSF) publically available data.
+Bart Ridership prediction based on hourly OD data from BART's ridership reports, which is publically available data.
 
 From Bart's website: [Ridership Reports](https://www.bart.gov/about/reports/ridership)
 

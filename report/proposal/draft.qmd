@@ -51,16 +51,74 @@ Our data is sourced from BART's ridership reports: [Ridership Reports](https://w
 knitr::kable(slice_sample(od_data, n = 1))
 ```
 
-We have the date, hour (using 24-hour clock), the origin station, destination station (both represented as four letter codes), and the ridership. This specific observation is from May 24th, 2018, and tells us that 5 people rode from the San Bruno station to the 16th St Mission (SF) station during the 3:00 - 4:00 PM hour. Our assumption is that this means these people exited at the 16th St Mission station during this time period, as exiting the BART system would create the OD pair, but that is not explicitly stated anywhere in the official data description. To demostrate we can read in the data, let's plot the exit rates for a October 15th, 2025 on a map of the SF Bay Area: 
+We have the date, hour (using 24-hour clock), the origin station, destination station (both represented as four letter codes), and the ridership. This specific observation is from May 24th, 2018, and tells us that 1 person rode from the San Bruno station to the 19th St. Oakland station during the 3:00 - 4:00 PM hour. Our assumption is that this means this person exited at the 19th St Mission station during this time period, as exiting the BART system would create the OD pair, but that is not explicitly stated anywhere in the official data description. 
 
-__This is a fun idea, but i would need to implement some geospatial data as well and I don't know if I have time for that right now. Probably better to do distributions of ridership for some specific OD pairs.__ 
+### Ridership Distributions
 
-```{r}
-# incomplete
+There are $50*49 + 50 = 2500$ different possible OD pairs in the data. BART has 50 stations, order of OD data matters, and there are instances of people getting on and off at the same station. Below are histograms of ridership numbers for a random sample of 6 OD pairs:
+
+```{r add-pairs-for-faceting}
+#| echo: false
+#| warning: false
+od_data <- od_data |> mutate(pair = paste(origin, destination, sep = " -> "))
+stations <- od_data |> 
+                distinct(pair) |>
+                slice_sample(n = 6)
+```
+
+```{r plot-ridership-histogram}
+#| echo: false
+#| warning: false
+od_data |> 
+    filter(pair %in% stations$pair) |>
+                ggplot() + 
+                        geom_histogram(aes(x = ridership), bins = 30) + 
+                        facet_wrap(~ pair) + 
+                        labs(title = "Ridership for Random Sample of OD Pairs",
+                            x = "Ridership",
+                            y = "Counts")
+```
+
+We can see here that ridership is a right-skewed output variable, and there are observations with relatively low numbers. The data does not include datetime-OD data for OD pairs that did not not have any riders, so we are safe to do a log-transform of the ridership variable.
+
+### Ridership Patterns
+
+We can also look at trends in ridership over the course of the day. Below are plots of ridership per hour for the same six OD pairs, limiting the data to just weekdays.
+
+```{r plot-hourly-ridership}
+#| echo: false
+#| warning: false
+od_data |> 
+    filter(pair %in% stations$pair & 
+            wday(date) %in% seq(2, 6)) |>
+    group_by(pair, hour) |>
+    summarize(riders = sum(ridership)) |>
+                ggplot(aes(x = hour, y = riders)) + 
+                        geom_line() + 
+                        facet_wrap(~ pair) + 
+                        labs(title = "Ridership Patterns by Hour for Random Sample of OD Pairs",
+                            x = "Hour of Day",
+                            y = "Ridership")
+```
+
+We can see again that there are some OD pairs that go relatively unused, such as South San Francisco (SSAN) to Castro Valley (CAST). On the other hand, the ones that do have relatively high ridership, such as Embarcadero (EMBR) to Civic Center (CIVC), exhibit the same pattern on Weekdays. Unsurprisingly, riderhip exhibits spikes at the beginning and end of the workday. It's important to note again that order of OD pairs matters in the dataset. These plots do not display riders who are going the other direction.
+
+### Plot Exit Rates at Stations
+
+Let's plot the exit rates for a October 15th, 2025 on a map of the SF Bay Area: 
+
+__This is a fun idea, but i would need to implement some geospatial data as well and I don't know if I have time for that right now.__ 
+
+```{r make-map}
+# eval: false
+# echo: false
+
+# would need to add geospatial data to do this
 od_data |> 
     filter(date == ymd("2025-10-15")) |>
     group_by(destination) |>
     summarize(exit_rate = n())
 ```
 
+# Modelling Plan
 
