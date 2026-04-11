@@ -44,17 +44,4 @@ ggplot() +
     geom_sf(data = kml_data1)
 ```
 
-```{r}
-kml_data2 <- st_read("../data/district-boundaries/doc.kml")
-
-# Extract coordinates (returns a matrix with X/Y or Lon/Lat)
-coords <- st_coordinates(kml_data)
-
-# Convert to a data frame for easier use
-coords_df <- as.data.frame(coords)
-
-ggplot() + 
-    geom_sf(data = kml_data2) + 
-    geom_sf(data = kml_data1)
-```
 
