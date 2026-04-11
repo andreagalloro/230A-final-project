@@ -105,71 +105,42 @@ We can see again that there are some OD pairs that go relatively unused, such as
 
 ## Ridership Over Time
 
-Plot ridership rates over time
+To see the effect of the COVID-19 pandemic on BART, and the change in ridership pre and post pandemic, we can group our data by month and year and plot overall ridership.
 
-```{r}
-# optional, maybe cool to see covid effect, but not necessary.
-# It's more important to finish modelling section.
-```
-
-## Plot Exit Rates at Stations
-
-Let's plot the exit rates for a October 15th, 2025 on a map of the SF Bay Area: 
-
-__This is a fun idea, but i would need to implement some geospatial data as well and I don't know if I have time for that right now.__ 
-
-```{r make-map}
-#| eval: false
+```{r plot-ridership-overtime}
 #| echo: false
-
-# would need to add geospatial data to do this
 od_data |> 
-    filter(date == ymd("2025-10-15")) |>
-    group_by(destination) |>
-    summarize(exit_rate = n())
+    mutate(month_year = floor_date(date, unit = "month")) |>
+    filter(pair == "PLZA -> EMBR") |>
+    group_by(month_year) |>
+    summarize(riders = sum(ridership)) |>
+    ggplot(aes(x = month_year, y = riders)) + 
+        geom_col(fill = "steelblue", color = "steelblue") +
+        labs(title = "Sytem Usage Over Time",
+            x = "Time",
+            y = "Ridership")
 ```
 
-# Modelling Plan Outline
-
-### Training/Test Split
-
-* Holdout 2025 as test data
-* discuss effects of holding out this data. What is the effect of training a model on pre and mid covid data, then evaluating it on Post covid data?
-
-### Feature Engineering
-
-* Post/mid/pre-Covid indicator
-* OD Pairs instead of two individual columns
-* Weekday vs. Saturday/Sunday
-* Data from other sources on weather or population density
-* Origin/Destination Zone
-* Adding Zeros Back into the Data
-* Time blocks instead of hourly data
-* Filtering for operational hours
-
-### Model Selection
-
-* Transformed OLS
-* Poisson and Negative Binomial Regression
-* Zero-inflated Regressions
+There is a clear discrepancy between the data before 2020 and after lockdowns started to ease in 2022. This distributional shift will need to be accounted for in our model.
 
 # Modelling Plan
 
-Our ultimate goal is to build a model to predict ridership based on features that we can create from the data, or join with the data from other sources. For example, models for transit ridership usually take into account weather on a particular day and population levels near stations, and our data does not come with this information by default. 
+Our ultimate goal is to build a model to predict ridership for OD pairs based on features that we can create from the data, or join with the data from other sources. For example, models for transit ridership usually take into account weather on a particular day and population levels near stations, and our data does not come with this information by default. 
 
-## Data Manipulation
+## Feature Engineering and Preprocessing
 
 Some examples of features we might add on include
 
-| Feature | Description              |
-|---------|--------------------------|
+| Feature | Description |
+|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Pre/Post-Covid Indicator | an indicator variable based on whether the data is before or after March 19th, 2020: The date Gov. Newsom issued a mandatory stay at home order for California. |
-| Day-Of-Week Factor | A three level factor indicating the day of the week as either Weekday, Saturday, or Sunday. As BART separates data in their monthly reports in this fashion. |
+| Day-of-Week Factor | A three level factor indicating the day of the week as either Weekday, Saturday, or Sunday. BART separates data in their monthly reports in this fashion. |
 | Transbay | An indicator variable based on whether the trip went through the transbay tube. |
 | Time Block | Converting hourly data into specific blocks of time, as our data may not need to be measured at such a fine level. |
 | Lag Ridership | The ridership of the OD pair from the previous hour, day, or week, since ridership is very time-dependent. |
+| Length of Trip | An estimation of the duration of the trip for the specific OD pair. |
 
-Additionally, we may need to do some data preprocessing before we continue. We may need to add back in the data that is not present as observations with $0$ ridership, or pivot to predicting exit rates instead of riderhips for OD pairs. Lastly, the data contains observations for all 24 hours of the day, but we can filter the data into only reasonable hours of operation. We do not need to attempt to predict ridership at 2:00 AM, when BART is not in service at most stations.
+Additionally, we may need to do some data preprocessing before we start training a model. We may need to add back in the data that is not present as observations with $0$ ridership, or switch to predicting exit rates instead of riderhips for OD pairs. Lastly, the data contains observations for all 24 hours of the day, but we can filter the data into only reasonable hours of operation. We do not need to predict ridership at 2:00 AM, when BART is not in service at most stations.
 
 ## Model Selection
 
