@@ -2,7 +2,7 @@
 title: Initial EDA of Hourly OD Data
 author: Drew Galloro
 format:
- html:
+  html:
    theme: cosmo
    toc: true
    code-copy: true
