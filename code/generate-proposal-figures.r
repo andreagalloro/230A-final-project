@@ -1,8 +1,8 @@
 ######
-# This code should be ran in the main final-project director using
+# This code should be ran in the main final-project directory using
 # source("code/generate-proposal-figures.r")
 # to generate the graphics used in the project proposal and 
-# store it in the report/proposal/figures directory
+# store them in the report/proposal/figures directory.
 ######
 
 cat("loading tidyverse and data\n")
