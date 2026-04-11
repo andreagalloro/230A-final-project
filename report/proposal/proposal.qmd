@@ -1,5 +1,5 @@
 ---
-title: STAT 230A Project Proposal Draft
+title: STAT 230A Project Proposal
 subtitle: Predicting BART Ridership Using Hourly OD Data
 author:
     - Andrea (Drew) Galloro
@@ -29,124 +29,40 @@ format:
             \newcommand{\sand}{\quad \text{and} \quad}
 ---
 
-```{r read-in-data}
-#| include: false
-library(tidyverse)
-od_data <- read_csv("../../data/od-data.csv")
-set.seed(230)
-```
+# Introduction:
 
-# Introduction
+Bay Area Rapid Transit (BART) services most parts of the San Francisco Bay Area. However, changes in demographics and a sudden drop in ridership placed BART on the back foot. BART navigated the effects of these changes while expanding service to the San Jose area. A model predicting ridership from existing data would be an aid to the agency. Understanding ridership patterns would help set schedules, justify new housing near stations, or guide service reductions. We will take publicly available BART hourly ridership data and use it to construct a linear model that captures trends in ridership over time.
 
-Bay Area Rapid Transit (BART) services connect people from all parts of the San Francisco Bay Area. Thousands of people ride BART every day of the year. However, changes in demographics and a large, sudden shock to public transit ridership have placed BART on the backfoot. BART navigated the effects of these changes while expanding service to the San Jose area and furthur inland into Contra Costa county. Building a model to predict ridership from existing data would be an aid to the agency, and could be used to help set schedules, justify new expansion or housing near stations, or justify reduced service in wake of an upcoming budget deficit. Our goal is to take publicly available BART hourly ridership data, organized by date and origin/destination (OD) pairs, and use it to construct a linear model that effectively captures trends in ridership over time.
+The dataset we chose to work with is large, but sparse in features. We have $67,770,440$ observations, but only $5$ features. Our plan is to use these features to engineer new ones that can extract patterns in the data and use linear modelling principles to evaluate their significance in predicting ridership. How does ridership vary by different features, and to what degree has BART been able to bounce back after the COVID-19 pandemic?
 
-The dataset we chose to work with is large, but sparce in features. We have `r dim(od_data)[1]` observations in the dataset, but only `r dim(od_data)[2]` features. As a result, our plan is to use these features to engineer new ones that can extract patterns in the data, and use linear modelling principles to evaluate the significance of our engineered features in predicting ridership. How does ridership vary by different features, and to what degree has BART been able to bounce back after the COVID-19 pandemic?
-
-# The Data
+# The Data:
 
 Our data is sourced from BART's [Ridership Reports](https://www.bart.gov/about/reports/ridership). Specifically, the hourly trip datasets, which run from 2018 to 2025. The 2026 dataset has not been updated yet. An observation in our data looks like the following:
 
-```{r make-observation-table}
-#| echo: false
-knitr::kable(slice_sample(od_data, n = 1))
-```
+| date       | hour | origin | destination | ridership |
+|------------|------|--------|-------------|-----------|
+| 2018-05-24 | 15   | SBRN   | 19TH        | 5         |
 
-We have the date, hour (using 24-hour clock), the origin station, destination station (both represented as four letter codes), and the ridership. This specific observation is from May 24th, 2018, and tells us that 1 person rode from the San Bruno station to the 19th St. Oakland station during the 3:00 - 4:00 PM hour. Our assumption is that this means this person exited at the 19th St Mission station during this time period, as exiting the BART system would create the OD pair, but that is not explicitly stated anywhere in the official data description. 
+We have the date, hour (using 24-hour clock), the origin station, destination station (both represented as four letter codes), and the ridership.
 
-## Ridership Distributions
+To demonstrate that we can read our data into R and manipulate it, we group ridership by month and year and plot the overall ridership. This allows us to observe changes in ridership pre- and post-pandemic.
 
-There are $50\cdot 49 + 50 = 2500$ different possible OD pairs in the data. BART has 50 stations, order of OD data matters, and there are instances of people getting on and off at the same station. Below are histograms of ridership numbers from the entire dataset for a random sample of 6 OD pairs:
+![Overall Ridership](figures/figure1.png){width=50% height=35% fig-align="center"}
 
-```{r add-pairs-for-faceting}
-#| echo: false
-#| warning: false
-od_data <- od_data |> mutate(pair = paste(origin, destination, sep = " -> "))
-stations <- od_data |> 
-                distinct(pair) |>
-                slice_sample(n = 6)
-```
+Unsurprisingly, there is a clear discrepancy between the data before 2020 and after lockdowns started to ease in 2022. This distributional shift will need to be accounted for in our model.
 
-```{r plot-ridership-histogram}
-#| echo: false
-#| warning: false
-od_data |> 
-    filter(pair %in% stations$pair) |>
-                ggplot() + 
-                        geom_histogram(aes(x = ridership), bins = 30) + 
-                        facet_wrap(~ pair) + 
-                        labs(title = "Ridership for Random Sample of OD Pairs",
-                            x = "Ridership",
-                            y = "Counts")
-```
+# Modelling Plan:
 
-We can see here that ridership is a right-skewed output variable, and there are observations with relatively low numbers. The data does not include observations for datetime-OD values that did not not have any riders.
+Our model will predict ridership for OD pairs based on features engineered from the data, or join with the data from other sources. Models for transit ridership usually take into account weather on a particular day and population levels near stations, and our data does not include this information. Examples of engineered features include a pre/post COVID-19 indicator, weekday/weekend indicator, transbay tube indicator, ridership from previous hour or week, and a measure of the distance travelled.
 
-## Ridership Patterns
+Since our data is right skewed and represents counts, we consider using a log-transformed linear model, Poisson model, or negative binomial model. We know the latter two have not been discussed, but we believe they will be covered under general linear models. We will use the 2025 data as a holdout set, and train the models on the 2018 - 2024 data, comparing model performance using MSE. However, there may be consequences to training a model on a mix of data from before, during, and after the COVID-19 pandemic, then testing it on post-pandemic data.
 
-We can also look at trends in ridership over the course of the day. Below are plots of total ridership per hour for the same six OD pairs, limiting the data to just weekdays, and summing over all dates.
+Lastly, we plan to discuss the ways in which this data violates linear modelling assumptions. In particular, homoscedasticity and independence of observations. Often, ridership is predicted using time-series analysis because of distributional shifts and the dependence in sequential data. However, the research question and domain are interesting enough to both of us that we would like to analyse it using methods learned in this class.
 
-```{r plot-hourly-ridership}
-#| echo: false
-#| warning: false
-od_data |> 
-    filter(pair %in% stations$pair & 
-            wday(date) %in% seq(2, 6)) |>
-    group_by(pair, hour) |>
-    summarize(riders = sum(ridership)) |>
-                ggplot(aes(x = hour, y = riders)) + 
-                        geom_line() + 
-                        facet_wrap(~ pair) + 
-                        labs(title = "Ridership Patterns by Hour for Random Sample of OD Pairs",
-                            x = "Hour of Day",
-                            y = "Ridership")
-```
+\newpage
 
-We can see again that there are some OD pairs that go relatively unused, such as South San Francisco (SSAN) to Castro Valley (CAST). On the other hand, the ones that do have relatively high ridership, such as Embarcadero (EMBR) to Civic Center (CIVC), exhibit the same pattern on Weekdays. Unsurprisingly, riderhip exhibits spikes at the beginning and end of the workday. It's important to note again that order of OD pairs matters in the dataset. These plots do not display riders who are going the other direction.
+# Appendix:
 
-## Ridership Over Time
+![Ridership Histograms for a Random Sample of Six OD Pairs](figures/figure2.png){width=60% height=40% fig-align="center"}
 
-To see the effect of the COVID-19 pandemic on BART, and the change in ridership pre and post pandemic, we can group our data by month and year and plot overall ridership.
-
-```{r plot-ridership-overtime}
-#| echo: false
-od_data |> 
-    mutate(month_year = floor_date(date, unit = "month")) |>
-    filter(pair == "PLZA -> EMBR") |>
-    group_by(month_year) |>
-    summarize(riders = sum(ridership)) |>
-    ggplot(aes(x = month_year, y = riders)) + 
-        geom_col(fill = "steelblue", color = "steelblue") +
-        labs(title = "Sytem Usage Over Time",
-            x = "Time",
-            y = "Ridership")
-```
-
-There is a clear discrepancy between the data before 2020 and after lockdowns started to ease in 2022. This distributional shift will need to be accounted for in our model.
-
-# Modelling Plan
-
-Our ultimate goal is to build a model to predict ridership for OD pairs based on features that we can create from the data, or join with the data from other sources. For example, models for transit ridership usually take into account weather on a particular day and population levels near stations, and our data does not come with this information by default. 
-
-## Feature Engineering and Preprocessing
-
-Some examples of features we might add on include
-
-| Feature | Description |
-|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Pre/Post-Covid Indicator | an indicator variable based on whether the data is before or after March 19th, 2020: The date Gov. Newsom issued a mandatory stay at home order for California. |
-| Day-of-Week Factor | A three level factor indicating the day of the week as either Weekday, Saturday, or Sunday. BART separates data in their monthly reports in this fashion. |
-| Transbay | An indicator variable based on whether the trip went through the transbay tube. |
-| Time Block | Converting hourly data into specific blocks of time, as our data may not need to be measured at such a fine level. |
-| Lag Ridership | The ridership of the OD pair from the previous hour, day, or week, since ridership is very time-dependent. |
-| Length of Trip | An estimation of the duration of the trip for the specific OD pair. |
-
-Additionally, we may need to do some data preprocessing before we start training a model. We may need to add back in the data that is not present as observations with $0$ ridership, or switch to predicting exit rates instead of riderhips for OD pairs. Lastly, the data contains observations for all 24 hours of the day, but we can filter the data into only reasonable hours of operation. We do not need to predict ridership at 2:00 AM, when BART is not in service at most stations.
-
-## Model Selection
-
-Since our data is right skewed and represents counts, we consider doing either a log-transformed linear model, a poisson model, or a negative binomial model. We know the class has not discussed the latter two yet, but they are present in _Linear Models and Extensions_ and we believe they will be covered when we discuss general linear models. If possible, we will compare these models against each other. Our current plan is to use the 2025 data as a holdout set, and train the models on the 2018 - 2024 data. Although, we may need to consider the consequences of training of a model on a mix of data from before, during, and after the COVID-19 pandemic, then testing it on data from after the pandemic.
-
-We also consider the use of some kind of LASSO or elastic net, as our preprocessing of the data to get it into a model-acceptible state may add many dimensions to the data. For example, if we pivot the data by OD pair, with indicators for each pair, then we have shifted the dimensions of the data drastically and increased the number of columns. A L1 regularization will be able to reduce the coefficients of any extraneous features to 0.
-
-After evaluating different models performance on our engineered test data, we plan to discuss the way that this data may violate linear modelling assumptions. In particular, the ways that the data violates homoscedasticity and independence of observations. Often, ridership is predicted using time-series analysis because of the time-dependent nature of the observations. However, the research question and domain are interesting enough to both of us that we wanted to take the opportunity to analyse it using the methods learned in this class.
-
+![Ridership per Hour Over All Years for the Same OD Pairs](figures/figure3.png){width=60% height=40% fig-align="center"}
