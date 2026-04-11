@@ -1,0 +1,60 @@
+---
+title: Geospatial EDA of Hourly OD Data
+author: Drew Galloro
+format:
+  html:
+   theme: cosmo
+   toc: true
+   code-copy: true
+   code-block-background: true
+   code-overflow: wrap
+embed-resources: true
+---
+
+# First Pass
+
+## Load in 2018 Data
+
+We'll just use the 2018 data since it's lighter and faster to work with.
+
+```{r}
+library(tidyverse)
+library(sf)
+dir <- "../data/date-hour-soo-dest-"
+od_2018 <- read_csv(paste(dir,"2018.csv", sep = ""), 
+        col_names = c(
+            "date", 
+            "hour", 
+            "origin",
+            "destination",
+            "ridership"
+        ))
+```
+
+```{r}
+kml_data1 <- st_read("../data/stations-and-lines/doc.kml")
+
+# Extract coordinates (returns a matrix with X/Y or Lon/Lat)
+coords <- st_coordinates(kml_data)
+
+# Convert to a data frame for easier use
+coords_df <- as.data.frame(coords)
+
+ggplot() + 
+    geom_sf(data = kml_data1)
+```
+
+```{r}
+kml_data2 <- st_read("../data/district-boundaries/doc.kml")
+
+# Extract coordinates (returns a matrix with X/Y or Lon/Lat)
+coords <- st_coordinates(kml_data)
+
+# Convert to a data frame for easier use
+coords_df <- as.data.frame(coords)
+
+ggplot() + 
+    geom_sf(data = kml_data2) + 
+    geom_sf(data = kml_data1)
+```
+
