@@ -44,4 +44,6 @@ ggplot() +
     geom_sf(data = kml_data1)
 ```
 
+We'll need to use the BART legacy API to get station locations: https://api.bart.gov/docs/stn/stns.aspx
+
 
