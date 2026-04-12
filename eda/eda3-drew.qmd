@@ -1,0 +1,54 @@
+---
+title: Feature Engineering
+author: Drew Galloro
+format:
+  html:
+   theme: cosmo
+   toc: true
+   code-copy: true
+   code-block-background: true
+   code-overflow: wrap
+embed-resources: true
+---
+
+# Testing Feature Engineering
+
+## Adding Features from Previous EDA's
+
+Let's start by adding in the weekday/weekend feature, and the pre/post-covid feature from eda1.
+
+```{r}
+#| echo: false
+#| warning: false
+library(tidyverse)
+od_data <- read_csv("../data/od-data.csv")
+```
+
+```{r}
+od_data <- od_data |> mutate(post_covid = if_else(date > ymd("2020-03-19"), 1, 0),
+                                day = case_when(wday(date) %in% seq(2, 6) ~ "weekday",
+                                                wday(date) == 1 ~ "sunday",
+                                                wday(date) == 7 ~ "saturday")
+                        )
+```
+
+Let's run some code to see what the results are
+
+```{r}
+od_data |> 
+    group_by(post_covid) |>
+    summarize(count = n(), median = median(ridership), mean = mean(ridership))
+```
+
+Let's look at the distribution of total ridership faceted by our covid indicator
+
+```{r}
+od_data |> 
+    ggplot(aes(x = ridership)) + 
+        geom_histogram(bins = 30, color = "steelblue") + 
+        labs(x = "Ridership",
+            y = "Counts") + 
+        facet_wrap(~ post_covid)
+```
+
+I realized that I can use an ipynb file with an R kernel. I've switched to ipynb files...
