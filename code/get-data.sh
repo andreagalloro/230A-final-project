@@ -1,6 +1,6 @@
 ####
 # This bash script should be run in the main final-project directory by calling
-# bash scripts/get-data.sh
+# bash code/get-data.sh
 # in the terminal. It creates a data folder and downloads the hourly OD data from BART
 ####
 
