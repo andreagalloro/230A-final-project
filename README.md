@@ -1,5 +1,7 @@
 # STAT 230A Final Project
 
+I used the instructions at this link to run jupyter noteboos on a compute node in the SCF: [Connect to an SCF Cluster Node](https://computing.stat.berkeley.edu/access/vscode-remote-ssh/#connect-to-an-scf-cluster-node)
+
 Bart Ridership prediction based on hourly OD data from BART's ridership reports, which is publically available data.
 
 From Bart's website: [Ridership Reports](https://www.bart.gov/about/reports/ridership)
