@@ -23,3 +23,6 @@ rsconnect/
 *.bmp
 *.tiff
 *.webp
+
+# ipynb checkpoints
+.ipynb_checkpoints/
