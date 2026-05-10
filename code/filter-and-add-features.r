@@ -18,12 +18,6 @@ add_day_of_week_indicator <- function(df) {
     return(df)
 }
 
-add_post_covid_indicator <- function(df) {
-    # Function to add a post covid indicator to the dataframe
-    df <- df |> mutate(post_covid = if_else(date > ymd("2020-03-19"), 1, 0))
-    return(df)
-}
-
 add_line_indicator <- function(df) {
     # Function to add a line indicator for each BART origin/destination line
     # List of all BART Lines
@@ -96,15 +90,14 @@ add_baseball_game_indicator <- function(df) {
 add_warriors_game_indicator <- function(df) {
     # Function to add a warriors game indicator to the dataframe
 
-    # Gather Dates of Home Games for Warriors from 2018-2025
-    warriors_home_dates <- load_nba_schedule(2018:2025) %>%
+    # Gather Dates of Home Games for Warriors from 2023-2025
+    warriors_home_dates <- load_nba_schedule(2023:2025) %>%
     filter(home_id == 9) %>%
     pull(game_date) %>%
     as.Date()
 
     df <- df %>%
     mutate(
-      warriors_at_coliseum = (date %in% warriors_home_dates) & (date < as.Date("2019-10-05")),
       warriors_at_chase = (date %in% warriors_home_dates) & (date >= as.Date("2019-10-05")) # Warriors first game (pre-season) at Chase
       )
     return(df)
@@ -120,6 +113,7 @@ add_season_indicator <- function(df) {
     return(df)
 }
 
+# remove this one from the pipleline
 filter_operational_hours <- function(df) {
     # Function to filter the dataframe to only include operational hours (5am-1am)
     df <- df %>% filter((day == "weekday") & !(hour %in% 0:4) |
@@ -147,9 +141,10 @@ dat <- read_csv("./data/od-data.csv")
 cat("Filtering...\n")
 # Filter for only data from 2023 onward
 dat <- dat %>% filter(year(date) >= 2023)
-
+ 
 dat <- dat |> add_day_of_week_indicator()
-dat_filtered <- filter_operational_hours(dat)
+# removed operational hours filter from pipeline
+# dat_filtered <- filter_operational_hours(dat)
 
 cat("Adding features...\n")
 dat_final <- add_all_features(dat_filtered)
