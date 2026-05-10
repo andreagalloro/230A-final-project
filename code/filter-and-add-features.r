@@ -1,15 +1,13 @@
+####
+# This r module should be run in the main final-project directory by calling
+# source("code/filter-and-add-features.r")
+# in an r session. Filters the data and adds features to create the final dataset for modeling.
+####
+
 library(tidyverse)
 library(tis)
 library(baseballr)
 library(hoopR)
-
-
-cat("Loading OD Data\n")
-dat <- read_csv("../data/od-data.csv")
-
-
-cat("Filtering and Adding Features\n")
-dat_filtered <- dat |> mutate()
 
 add_day_of_week_indicator <- function(df) {
     # Function to add a day of week indicator to the dataframe
@@ -95,7 +93,7 @@ add_baseball_game_indicator <- function(df) {
     return(df)
 }
 
-add warriors_game_indicator <- function(df) {
+add_warriors_game_indicator <- function(df) {
     # Function to add a warriors game indicator to the dataframe
 
     # Gather Dates of Home Games for Warriors from 2018-2025
@@ -104,9 +102,6 @@ add warriors_game_indicator <- function(df) {
     pull(game_date) %>%
     as.Date()
 
-    years <- 2018:2025
-    warriors_home_dates <- map(years, ~get_warriors_home_games(.x)) %>% list_c()
-
     df <- df %>%
     mutate(
       warriors_at_coliseum = (date %in% warriors_home_dates) & (date < as.Date("2019-10-05")),
@@ -114,3 +109,51 @@ add warriors_game_indicator <- function(df) {
       )
     return(df)
 }
+
+add_season_indicator <- function(df) {
+    # Function to add a season indicator to the dataframe
+    df <- df %>% mutate(season = case_when(month(date) %in% c(12, 1, 2) ~ "winter",
+                                            month(date) %in% c(3, 4, 5) ~ "spring",
+                                            month(date) %in% c(6, 7, 8) ~ "summer",
+                                            month(date) %in% c(9, 10, 11) ~ "fall")
+                        )
+    return(df)
+}
+
+filter_operational_hours <- function(df) {
+    # Function to filter the dataframe to only include operational hours (5am-1am)
+    df <- df %>% filter((day == "weekday") & !(hour %in% 0:4) |
+                        (day == "saturday") & !(hour %in% 0:5) | 
+                        (day == "sunday") & !(hour %in% 0:7))
+    return(df)
+}
+
+add_all_features <- function(df) {
+    # Function to filter the dataframe and add features
+    df <- df %>%
+    add_post_covid_indicator() %>%
+    add_line_indicator() %>%
+    add_holiday_indicator() %>%
+    add_baseball_game_indicator() %>%
+    add_warriors_game_indicator() %>%
+    add_season_indicator()
+    return(df)
+}
+
+cat("Loading OD Data...\n")
+cat("Printing working directory: ", getwd(), "\n")
+dat <- read_csv("./data/od-data.csv")
+
+cat("Filtering...\n")
+# Filter for only data from 2023 onward
+dat <- dat %>% filter(year(date) >= 2023)
+
+dat <- dat |> add_day_of_week_indicator()
+dat_filtered <- filter_operational_hours(dat)
+
+cat("Adding features...\n")
+dat_final <- add_all_features(dat_filtered)
+
+cat("Exporting final dataset...\n")
+write_csv(dat_final, "./data/final-dataset.csv")
+cat("Done!\n")
