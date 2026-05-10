@@ -50,7 +50,7 @@ add_line_indicator <- function(df) {
         destination_column <- paste0("destination_", color)
         df <- df %>%
         mutate(
-        !!origin_column := origin %in% bart_lines[[color]],
+        #!!origin_column := origin %in% bart_lines[[color]],
         !!destination_column := destination %in% bart_lines[[color]]
         )
     }
