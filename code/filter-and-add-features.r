@@ -126,7 +126,7 @@ add_all_features <- function(df) {
     # Function to filter the dataframe and add features
     df <- df %>%
     #add_post_covid_indicator() %>%
-    add_line_indicator() %>%
+    #add_line_indicator() %>%
     add_holiday_indicator() %>%
     add_baseball_game_indicator() %>%
     add_warriors_game_indicator() %>%
