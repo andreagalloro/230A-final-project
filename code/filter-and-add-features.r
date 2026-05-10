@@ -125,7 +125,7 @@ filter_operational_hours <- function(df) {
 add_all_features <- function(df) {
     # Function to filter the dataframe and add features
     df <- df %>%
-    add_post_covid_indicator() %>%
+    #add_post_covid_indicator() %>%
     add_line_indicator() %>%
     add_holiday_indicator() %>%
     add_baseball_game_indicator() %>%
@@ -141,13 +141,16 @@ dat <- read_csv("./data/od-data.csv")
 cat("Filtering...\n")
 # Filter for only data from 2023 onward
 dat <- dat %>% filter(year(date) >= 2023)
+
+# Aggregate on the destination level
+dat <- dat %>% group_by(date, hour, destination) %>% summarize(ridership=sum(ridership))
  
 dat <- dat |> add_day_of_week_indicator()
 # removed operational hours filter from pipeline
 # dat_filtered <- filter_operational_hours(dat)
 
 cat("Adding features...\n")
-dat_final <- add_all_features(dat_filtered)
+dat_final <- add_all_features(dat)
 
 cat("Exporting final dataset...\n")
 write_csv(dat_final, "./data/final-dataset.csv")
