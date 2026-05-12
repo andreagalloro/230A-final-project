@@ -115,7 +115,7 @@ dev.off()
 
 # Plot Leverage vs. Residuals
 png("./figs/leverage_residuals_poisson_final.png")
-plot(poisson_final, which = 4)
+plot(poisson_final, which = 5)
 dev.off() 
 
 # VIF Of Final Model
