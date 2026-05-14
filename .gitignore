@@ -15,15 +15,6 @@ data/
 # RStudio Connect folder
 rsconnect/
 
-# Image files, existing ones will still be in commit history
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.bmp
-*.tiff
-*.webp
-
 # Model files
 *.rds
 
