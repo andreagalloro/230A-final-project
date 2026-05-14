@@ -1,0 +1,8 @@
+Model,Lambda_Selection,Test_MSE,Test_RMSE
+Basic LM,—,37737.69,194.26
+Log-Transformed LM (bias-corrected),—,41879.63,204.65
+Poisson GLM,—,28588.02,169.08
+Negative Binomial GLM,—,41493.66,203.7
+Ridge Poisson (lambda = 7.082),5-fold time-based CV,29175.51,170.81
+Ridge NB (lambda = 0.599),Validation set (2023 train / 2024 val),38249.13,195.57
+Zero-Inflated NB,—,40386.64,200.96
