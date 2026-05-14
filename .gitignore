@@ -25,7 +25,7 @@ rsconnect/
 *.webp
 
 # Model files
-.rds
+*.rds
 
 # ipynb checkpoints
 .ipynb_checkpoints/
