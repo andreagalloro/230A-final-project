@@ -4,6 +4,7 @@
 # in an r session. Filters the data and adds features to create the final dataset for modeling.
 ####
 
+cat("Loading in r libraries...\n")
 library(tidyverse)
 library(tis)
 library(baseballr)
@@ -18,6 +19,9 @@ add_day_of_week_indicator <- function(df) {
     return(df)
 }
 
+# This indicator caused problems in the model
+# later down the line, it was removed from the 
+# final pipeline.
 add_line_indicator <- function(df) {
     # Function to add a line indicator for each BART origin/destination line
     # List of all BART Lines
@@ -134,17 +138,21 @@ add_all_features <- function(df) {
     return(df)
 }
 
-cat("Loading OD Data...\n")
+cat("Loading Post-Covid OD Data...\n")
 cat("Printing working directory: ", getwd(), "\n")
-dat <- read_csv("./data/od-data.csv")
-
-cat("Filtering...\n")
-# Filter for only data from 2023 onward
-dat <- dat %>% filter(year(date) >= 2023)
+dat <- read_csv("./data/od-data-post-covid.csv")
 
 # Aggregate on the destination level
-dat <- dat %>% group_by(date, hour, destination) %>% summarize(ridership=sum(ridership))
+# dropping groups for clarity on the usage of 
+# complete()
+cat("Summing ridership over destination...\n")
+dat <- dat %>% group_by(date, hour, destination) %>% summarize(ridership=sum(ridership), .groups = "drop")
  
+
+# Complete data
+cat("Adding in zeros...\n")
+dat <- dat |> complete(date, hour, destination, fill = list(ridership = 0))
+
 dat <- dat |> add_day_of_week_indicator()
 # removed operational hours filter from pipeline
 # dat_filtered <- filter_operational_hours(dat)
@@ -155,3 +163,4 @@ dat_final <- add_all_features(dat)
 cat("Exporting final dataset...\n")
 write_csv(dat_final, "./data/final-dataset.csv")
 cat("Done!\n")
+

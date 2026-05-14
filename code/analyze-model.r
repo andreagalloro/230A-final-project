@@ -1,3 +1,10 @@
+####
+# This r module should be run in the main final-project directory by calling
+# source("code/analyze-model.r")
+# in an r session. Analyzes the poisson glm and generates full poisson model.
+####
+
+cat("Loading libraries...\n")
 library(tidyverse)
 library(tis)
 library(baseballr)
@@ -10,11 +17,11 @@ library(Matrix)
 library(lmtest)
 library(car)
 
-setwd("..")
-
+cat("Loading in data...\n")
 df <- read_csv("./data/final-dataset.csv")
 
 # Split into Training and Testing sets. Treat hour as a factor.
+cat("Split into train/test, change hour to factor...\n")
 train <- df %>%
   filter(year(date) < 2025) %>%
   mutate(hour = as_factor(hour))
@@ -22,8 +29,9 @@ test <- df %>%
   filter(year(date) == 2025) %>%
   mutate(hour = as_factor(hour))
 
-# Train Model
-poisson_lm <- glm(ridership ~ ., data = train[, -c(1)], family = poisson(link = "log"))
+# Load Model
+cat("Loading model from file...\n")
+poisson_lm <- read_rds(file = "report/final/poisson-lm.rds")
 
 y_train <- train$ridership
 y_test <- test$ridership
@@ -39,11 +47,13 @@ preds_poisson <- predict(poisson_lm, newdata = test, type = "response")
 result_poisson <- eval_preds(preds_poisson, y_test)
 
 # Train Full Poisson (v1)
+cat("Training full Poisson...\n")
 full <- df %>% mutate(hour = as_factor(hour))
 
 poisson_full <- glm(ridership ~ ., data = full[, -c(1)], family = poisson(link = "log"))
 
 # Analysis 1: High Residual Points
+cat("Analysis 1: High Residual Points\n")
 pearson_resid <- residuals(poisson_full, type = "pearson")
 leverage <- hatvalues(poisson_full)
 
@@ -58,12 +68,15 @@ resid_df <- tibble(
   abs_resid = abs(pearson_resid)
 )
 
-print(resid_df %>%
+high_resid <- resid_df %>%
   arrange(desc(abs_resid)) %>%
   filter(leverage < median(leverage)) %>%
-  head(20))
+  head(20)
+print(high_resid)
+write_csv(x = high_resid, file = "report/final/high-resid.csv")
 
 # Analysis 2: Stratified Prediction
+cat("Analysis 2: Stratified Prediction\n")
 test_annotated <- test %>%
   mutate(
     pred = preds_poisson,
@@ -77,8 +90,8 @@ test_annotated <- test %>%
     day_type = ifelse(day %in% c("saturday", "sunday"), "weekend", "weekday")
   )
 
-print(
-  test_annotated %>%
+
+strat_preds <- test_annotated %>%
     group_by(day_type, period) %>%
     summarise(
       RMSE = sqrt(mean(sq_error)),
@@ -86,15 +99,18 @@ print(
       n = n()
     ) %>%
     arrange(desc(n))
-)
+print(strat_preds)
+write_csv(x = strat_preds, file = "report/final/stratified-prediction-errors.csv")
 
 # Analysis 3: Overdispersion Check
+cat("Analysis 3: Overdispersion Check\n")
 nb_lm <- glm.nb(ridership ~ ., data = train[, -c(1)])
 
 lrtest(nb_lm, poisson_lm)
 nb_lm$theta
 
-# Build Full Poisson (v2) with interactions, Training + Testing
+# Build Full Poisson (v2) with interactions, Training
+cat("Building full Poisson with interaction on training\n")
 poisson_lm2 <- glm(ridership ~ destination + hour * day + is_holiday + is_giants_home + is_as_home + warriors_at_chase + season, data = train[, -c(1)], family = poisson(link = "log"))
 summary(poisson_lm2)
 
@@ -104,22 +120,32 @@ result_poisson2 <- eval_preds(preds_poisson2, y_test)
 
 print(result_poisson2)
 
+
 # Full Poisson Model with Interactions on Full Dataset
+cat("Building final Poisson with interaction on full dataset\n")
 poisson_final <- glm(ridership ~ destination + hour * day + is_holiday + is_giants_home + is_as_home + warriors_at_chase + season, data = full[, -c(1)], family = poisson(link = "log"))
 summary(poisson_final)
 
+cat("Saving figures...\n")
 # Plot Residuals vs. Fitted Values
-png("./figs/residuals_fitted_poisson_final.png")
+png("./report/final/figures/residuals_fitted_poisson_final.png")
 plot(poisson_final, which = 1)
 dev.off() 
 
 # Plot Leverage vs. Residuals
-png("./figs/leverage_residuals_poisson_final.png")
+png("./report/final/figures/leverage_residuals_poisson_final.png")
 plot(poisson_final, which = 5)
 dev.off() 
 
+cat("Performing variance inflation factor and autocorrolation analysis...\n")
 # VIF Of Final Model
-vif(poisson_final)
+v <- vif(poisson_final)
+print(v)
+
+vif_df <- as.data.frame(v) |>
+  tibble::rownames_to_column("term")
+
+write_csv(vif_df, "report/final/vif.csv")
 
 # Rootogram of Final Model
 # Observed Counts and model-fitted values
@@ -148,6 +174,7 @@ rootogram_df <- tibble(
   bar_bot = sqrt_exp - sqrt_obs
 )
 
+cat("Saving figures...\n")
 ggplot(rootogram_df, aes(x = count)) +
   geom_rect(
     aes(
@@ -165,7 +192,7 @@ ggplot(rootogram_df, aes(x = count)) +
     y = "sqrt(Frequency)"
   ) +
   theme_minimal()
-ggsave("./figs/rootogram_poisson.png", width = 8, height = 5)
+ggsave("./report/final/figures/rootogram_poisson.png", width = 8, height = 5)
 
 # Demonstrate Autocorrelation
 # Plot of ridership over time
@@ -185,7 +212,7 @@ df %>%
     color = "Station"
   ) +
   theme_minimal()
-ggsave("./figs/monthly_ridership.png", width = 8, height = 5)
+ggsave("./report/final/figures/monthly_ridership.png", width = 8, height = 5)
 
 # ACF Plot to Show Autocorrelation
 daily_ridership <- df %>%
@@ -215,4 +242,22 @@ ggplot(acf_df, aes(x = lag, y = acf)) +
     y = "Autocorrelation"
   ) +
   theme_minimal()
-ggsave("./figs/acf_ridership.png", width = 8, height = 5)
+ggsave("./report/final/figures/acf_ridership.png", width = 8, height = 5)
+
+cat("Saving model and coefficients\n")
+# save output of summary
+sink("report/final/poisson-final-summary.txt")
+summary(poisson_final)
+sink()
+# Save final poisson with interaction
+write_rds(x = poisson_final, file = "report/final/poisson-final.rds")
+
+# Save model coefficients
+coef_table <- summary(poisson_final)$coefficients |>
+  as.data.frame() |>
+  rownames_to_column(var = "term")
+
+write_csv(coef_table, "report/final/poisson-coefficients.csv")
+
+cat("Done!\n")
+
