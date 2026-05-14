@@ -1,5 +1,6 @@
 # Data
 data/
+.csv
 
 # knitr and R markdown default cache directories
 *_cache/
@@ -23,6 +24,10 @@ rsconnect/
 *.bmp
 *.tiff
 *.webp
+
+# Model files
+.rds
+.txt
 
 # ipynb checkpoints
 .ipynb_checkpoints/
